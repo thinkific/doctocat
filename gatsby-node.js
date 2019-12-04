@@ -1,13 +1,16 @@
-const path = require('path')
-const readPkgUp = require('read-pkg-up')
-const getPkgRepo = require('get-pkg-repo')
-const axios = require('axios')
-const uniqBy = require('lodash.uniqby')
+const path = require('path');
+const readPkgUp = require('read-pkg-up');
+const getPkgRepo = require('get-pkg-repo');
+const axios = require('axios');
+const uniqBy = require('lodash.uniqby');
+const dotenv = require('dotenv');
 
-exports.createPages = async ({graphql, actions}, themeOptions) => {
-  const repo = getPkgRepo(readPkgUp.sync().package)
+dotenv.config();
 
-  const {data} = await graphql(`
+exports.createPages = async ({ graphql, actions }, themeOptions) => {
+  const repo = getPkgRepo(readPkgUp.sync().package);
+
+  const { data } = await graphql(`
     {
       allMdx {
         nodes {
@@ -22,31 +25,31 @@ exports.createPages = async ({graphql, actions}, themeOptions) => {
         }
       }
     }
-  `)
+  `);
 
   // Turn every MDX file into a page.
   return Promise.all(
-    data.allMdx.nodes.map(async node => {
+    data.allMdx.nodes.map(async (node) => {
       const pagePath = path
         .join(
           node.parent.relativeDirectory,
           node.parent.name === 'index' ? '/' : node.parent.name,
         )
-        .replace(/\\/g, '/') // Convert Windows backslash paths to forward slash paths: foo\\bar → foo/bar
+        .replace(/\\/g, '/'); // Convert Windows backslash paths to forward slash paths: foo\\bar → foo/bar
 
       const rootAbsolutePath = path.resolve(
         process.cwd(),
         themeOptions.repoRootPath || '.',
-      )
+      );
 
       const fileRelativePath = path.relative(
         rootAbsolutePath,
         node.fileAbsolutePath,
-      )
+      );
 
-      const editUrl = getEditUrl(repo, fileRelativePath)
+      const editUrl = getEditUrl(repo, fileRelativePath);
 
-      const contributors = await fetchContributors(repo, fileRelativePath)
+      const contributors = await fetchContributors(repo, fileRelativePath);
 
       actions.createPage({
         path: pagePath,
@@ -59,36 +62,42 @@ exports.createPages = async ({graphql, actions}, themeOptions) => {
           // because gatsby-plugin-mdx automatically does that.
           // Source: https://git.io/fjQDa
         },
-      })
+      });
     }),
-  )
-}
+  );
+};
 
 function getEditUrl(repo, filePath) {
-  return `https://github.com/${repo.user}/${repo.project}/edit/master/${filePath}`
+  return `https://github.com/${repo.user}/${repo.project}/edit/master/${filePath}`;
 }
 
 async function fetchContributors(repo, filePath) {
   try {
-    const {data} = await axios.get(
-      `https://api.github.com/repos/${repo.user}/${repo.project}/commits?path=${filePath}`,
-    )
+    const { data } = await axios.get(
+      `https://api.github.com/repos/${repo.user}/${repo.project}/commits?sha=${process.env.BRANCH}&path=${filePath}`,
+      {
+        headers: {
+          Authorization: `token ${process.env.GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3.raw',
+        },
+      },
+    );
 
     const commits = data
-      .map(commit => ({
+      .map((commit) => ({
         login: commit.author && commit.author.login,
         latestCommit: {
           date: commit.commit.author.date,
           url: commit.html_url,
         },
       }))
-      .filter(contributor => Boolean(contributor.login))
+      .filter((contributor) => Boolean(contributor.login));
 
-    return uniqBy(commits, 'login')
+    return uniqBy(commits, 'login');
   } catch (error) {
     console.error(
       `[ERROR] Unable to fetch contributors for ${filePath}. ${error.message}`,
-    )
-    return []
+    );
+    return [];
   }
 }
