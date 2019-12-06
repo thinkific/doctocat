@@ -9,13 +9,18 @@ function Tabs({ children }) {
     return str.replace(/language-/, '')
   }
 
+  function handleClick(e, lang) {
+    e.preventDefault()
+    setTab(lang)
+  } 
+
   return (
     <>
       <SubNav aria-label="Main">
         {children.map((el, i) => {
           const { className } = el.props.children.props
           const language = className ? extractLanguage(className) : ''
-          return <SubNav.Link key={i} href="#" onClick={() => setTab(language)} selected={language === tab}>{language.toUpperCase()}</SubNav.Link>
+          return <SubNav.Link key={i} onClick={(e) => handleClick(e, language)} selected={language === tab} style={{cursor: 'pointer'}}>{language.toUpperCase()}</SubNav.Link>
         })}
       </SubNav>
       {children.map((el, i) => {
