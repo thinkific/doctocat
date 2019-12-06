@@ -9,8 +9,10 @@ import Sidebar from './sidebar'
 import SourceLink from './source-link'
 import StatusLabel from './status-label'
 import TableOfContents from './table-of-contents'
+import Tabs from './tabs'
 
 function Layout({children, pageContext}) {
+  const newChildren = reconstructChildren()
   const {h1: H1 = 'h1'} = React.useContext(MDXContext)
   const {
     title,
@@ -19,6 +21,25 @@ function Layout({children, pageContext}) {
     source,
     additionalContributors = [],
   } = pageContext.frontmatter
+
+  function reconstructChildren() {
+    let cursor
+
+    return children.reduce(function(a, e, i) {
+      if (e.props.children === '{tab') {
+        cursor = i + 1
+      } else if (e.props.children === 'tab}') {
+        a.push(React.createElement(Tabs, null, children.slice(cursor, i)))
+        cursor = null
+      }
+
+      if (e.props.children !== '{tab' && e.props.children !== 'tab}' && !cursor) {
+        a.push(e)
+      }
+
+      return a
+    }, [])
+  }
 
   return (
     <Flex flexDirection="column" minHeight="100vh">
@@ -43,7 +64,7 @@ function Layout({children, pageContext}) {
             <TableOfContents items={pageContext.tableOfContents.items} />
           ) : null}
 
-          {children}
+          {newChildren}
 
           <PageFooter
             editUrl={pageContext.editUrl}
