@@ -20,7 +20,7 @@ function Layout({children, pageContext}) {
     source,
     additionalContributors = [],
   } = pageContext.frontmatter
-  const shouldReconstructChildren = children.length && children.some((e) =>  e.props.children === '{tab')
+  const shouldReconstructChildren = children.length && children.some((e) =>  e.props && e.props.children === '{tab')
 
   function reconstructChildren() {
     let cursor
