@@ -12,18 +12,18 @@ function Tabs({ children }) {
   return (
     <>
       <SubNav aria-label="Main">
-        {children.map((el) => {
+        {children.map((el, i) => {
           const { className } = el.props.children.props
           const language = className ? extractLanguage(className) : ''
-          return <SubNav.Link href="#" onClick={() => setTab(language)} selected={language === tab}>{language.toUpperCase()}</SubNav.Link>
+          return <SubNav.Link key={i} href="#" onClick={() => setTab(language)} selected={language === tab}>{language.toUpperCase()}</SubNav.Link>
         })}
       </SubNav>
-      {children.map((el) => {
+      {children.map((el, i) => {
         const { className } = el.props.children.props
         const language = className ? extractLanguage(className) : ''
 
         return (
-          <Box style={{display: tab === language ? 'block' : 'none'}}>
+          <Box key={i} style={{display: tab === language ? 'block' : 'none'}}>
             {el}
           </Box>
         )

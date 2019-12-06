@@ -12,7 +12,6 @@ import TableOfContents from './table-of-contents'
 import Tabs from './tabs'
 
 function Layout({children, pageContext}) {
-  const newChildren = reconstructChildren()
   const {h1: H1 = 'h1'} = React.useContext(MDXContext)
   const {
     title,
@@ -21,6 +20,7 @@ function Layout({children, pageContext}) {
     source,
     additionalContributors = [],
   } = pageContext.frontmatter
+  const shouldReconstructChildren = children.length && children.some((e) =>  e.props.children === '{tab')
 
   function reconstructChildren() {
     let cursor
@@ -29,7 +29,7 @@ function Layout({children, pageContext}) {
       if (e.props.children === '{tab') {
         cursor = i + 1
       } else if (e.props.children === 'tab}') {
-        a.push(React.createElement(Tabs, null, children.slice(cursor, i)))
+        a.push(React.createElement(Tabs, { key: i }, children.slice(cursor, i)))
         cursor = null
       }
 
@@ -64,7 +64,7 @@ function Layout({children, pageContext}) {
             <TableOfContents items={pageContext.tableOfContents.items} />
           ) : null}
 
-          {newChildren}
+          {shouldReconstructChildren ? reconstructChildren() : children}
 
           <PageFooter
             editUrl={pageContext.editUrl}
